@@ -1,0 +1,18 @@
+schema: mcpg.dev/plugin/v1
+id: dev.mcpg.backend.openapi
+name: OpenAPI Binding
+license: Apache-2.0
+description: |
+  Registers OpenAPI 3.0/3.1 documents as named `sources` in the
+  plugin's own config and exposes their operations as MCP tools. An
+  operator references one operation per binding via
+  `backend: { kind: openapi, source, operation }`; the plugin derives
+  the tool inputSchema/outputSchema from the operation's parameters +
+  requestBody + responses and dispatches the call as an outbound HTTP
+  request. The DNS-rebinding guard rejects private/loopback resolved
+  addresses unless the source opts in; per-caller `${cred://…}` tokens
+  in headers/auth resolve through the gateway's credential cache at dispatch.
+class: backend
+runtime: native-cdylib-v1
+protocol_version: "1.0"
+required_capabilities: [network_outbound]
