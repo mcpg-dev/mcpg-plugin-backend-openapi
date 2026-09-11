@@ -54,7 +54,7 @@ plugins:
     source:
       path: ./plugins/libmcpg_plugin_backend_openapi.so
       # or, platform-agnostic:
-      # oci: ghcr.io/mcpg-dev/source-code/plugins/backend-openapi:protocol-1
+      # oci: ghcr.io/mcpg-dev/plugins/backend-openapi
     granted_capabilities:
       - network_outbound
     config:
