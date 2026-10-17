@@ -94,7 +94,7 @@ mcp:
 | `response.timeout_ms` | u64 | `8000` | Per-call timeout. |
 | `expose` | object | unset | Bulk auto-expose. Absent means reference-only: the source serves explicit bindings alone. |
 | `filter` | object | see below | Whitelist / blacklist applied to auto-exposed operations. |
-| `governance` | object | unset | Governance block relayed verbatim onto every auto-exposed capability of this source. The plugin does not interpret it. |
+| `governance` | object | unset | Governance block relayed verbatim onto every auto-exposed capability of this source. The plugin does not interpret it. A block that names no `minimum_trust` gates those capabilities at `header_asserted`, as a federation's does; the gateway's `default_minimum_trust` does not apply to them. |
 | `retry` | object | unset | Retry block relayed the same way. |
 
 Unknown fields are rejected on the `config:` block itself, on the source entry,
