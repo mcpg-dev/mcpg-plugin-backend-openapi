@@ -25,6 +25,16 @@ pub struct ParsedSpec {
     pub root: Value,
 }
 
+/// Whether `s` begins with an RFC 3986 scheme and `://`.
+fn starts_with_uri_scheme(s: &str) -> bool {
+    let Some((scheme, _)) = s.split_once("://") else {
+        return false;
+    };
+    let mut chars = scheme.chars();
+    chars.next().is_some_and(|c| c.is_ascii_alphabetic())
+        && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
+}
+
 impl ParsedSpec {
     /// Load + parse the document for a source. `file://` paths and inline
     /// docs are supported in Tier 1; `http(s)://` is deferred.
@@ -40,6 +50,11 @@ impl ParsedSpec {
                     return Err(format!(
                         "remote spec sources are not yet supported (deferred to a later phase): '{uri}'"
                     ));
+                } else if !starts_with_uri_scheme(uri) {
+                    // The mcpg gateway resolves a whole-string `file://`
+                    // config value to the file's content before the plugin
+                    // sees it, so a spec without a scheme is the document.
+                    parse_doc(uri).map_err(|e| format!("parsing spec document: {e}"))?
                 } else {
                     return Err(format!("unsupported spec source scheme: '{uri}'"));
                 }
@@ -605,4 +620,27 @@ impl ParamLocation {
 fn is_object_schema(schema: &Value) -> bool {
     schema.get("type").and_then(Value::as_str) == Some("object")
         || schema.get("properties").is_some()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_spec_string_without_a_scheme_is_the_document() {
+        // What the host hands over after it resolves `file://` to the content.
+        let doc = "openapi: 3.0.3\ninfo: { title: t, version: \"1\" }\n\
+                   servers: [{ url: \"https://api.example.com\" }]\npaths: {}\n";
+        let spec = ParsedSpec::load(&SpecSource::Uri(doc.to_owned())).expect("parses");
+        assert_eq!(spec.root["openapi"], "3.0.3");
+    }
+
+    #[test]
+    fn an_unknown_scheme_is_refused() {
+        let err = ParsedSpec::load(&SpecSource::Uri("ftp://h/spec.yaml".to_owned())).unwrap_err();
+        assert!(err.contains("unsupported spec source scheme"), "{err}");
+        assert!(!starts_with_uri_scheme(
+            "paths: {}\nservers: [{ url: \"https://x\" }]"
+        ));
+    }
 }
